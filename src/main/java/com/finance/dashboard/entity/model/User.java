@@ -5,6 +5,7 @@ import com.finance.dashboard.entity.enums.Role;
 import com.finance.dashboard.entity.enums.Status;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,7 +46,7 @@ public class User {
     private Role role;
 
     @Indexed
-    @NotBlank(message = "Status is required! ")
+    @NotNull
     private Status status;
 
     @CreatedDate
@@ -64,6 +65,8 @@ public class User {
     private Integer tokenVersion;
 
     private LocalDateTime accountLockedUntil;
+
+    private Integer failedLoginAttempts;
 
 
 
