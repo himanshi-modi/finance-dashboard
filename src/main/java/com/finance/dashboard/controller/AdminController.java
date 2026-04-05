@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users")
     public ResponseEntity<Page<UserResponseDto>> getUsers(@RequestParam(defaultValue = "0") int page,
                                                           @RequestParam(defaultValue = "10")int size,
