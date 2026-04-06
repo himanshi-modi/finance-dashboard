@@ -22,7 +22,7 @@ public class FinancialRecordController {
 
     private final FinancialRecordService financialRecordService;
     @Operation(summary = "Create financial record")
-    @PreAuthorize("hasAnyRole('ADMIN','ANALYST')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<FinancialRecordResponseDto> createRecord(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -34,7 +34,7 @@ public class FinancialRecordController {
     }
 
     @Operation(summary = "Get all financial records of logged-in user")
-    @PreAuthorize("hasAnyRole('ADMIN','ANALYST','VIEWER')")
+    @PreAuthorize("hasAnyRole('ADMIN','ANALYST')")
     @GetMapping
     public ResponseEntity<Page<FinancialRecordResponseDto>> getAllRecords(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -49,24 +49,24 @@ public class FinancialRecordController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<FinancialRecordResponseDto> updateRecord(
-            @PathVariable String id,
+            @PathVariable String id, String userId,
             @RequestBody FinancialRecordRequestDto requestDto
     ) {
         return ResponseEntity.ok(
-                financialRecordService.update(id, requestDto)
+                financialRecordService.update(id, requestDto,userId)
         );
     }
 
     @Operation(summary = "Soft delete financial record (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteRecord(@PathVariable String id) {
-        financialRecordService.delete(id);
+    public ResponseEntity<String> deleteRecord(@PathVariable String id,String userId) {
+        financialRecordService.delete(id,userId);
         return ResponseEntity.ok("Record deleted");
     }
 
     @Operation(summary = "Filter financial records")
-    @PreAuthorize("hasAnyRole('ADMIN','ANALYST','VIEWER')")
+    @PreAuthorize("hasAnyRole('ADMIN','ANALYST')")
     @PostMapping("/filter")
     public ResponseEntity<Page<FinancialRecordResponseDto>> filterRecords(
             @AuthenticationPrincipal CustomUserDetails user,

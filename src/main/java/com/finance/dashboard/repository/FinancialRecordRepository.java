@@ -19,5 +19,5 @@ public interface FinancialRecordRepository extends MongoRepository<FinancialReco
 
     Page<FinancialRecord>findByUserIdAndCategoryContainingIgnoreCaseAndRecordTypeAndIsDeletedFalse(String userId,String category,RecordType type ,Pageable pageable);
     Page<FinancialRecord> findByUserIdAndDateBetweenAndIsDeletedFalse(String userId,LocalDateTime start,LocalDateTime end, Pageable pageable);
-
+    List<FinancialRecord> findByUserIdAndIsDeletedFalse(String userId);
 }

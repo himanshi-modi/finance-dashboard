@@ -3,8 +3,9 @@ package com.finance.dashboard.service;
 import com.finance.dashboard.dto.FilterRequestDto;
 import com.finance.dashboard.dto.FinancialRecordRequestDto;
 import com.finance.dashboard.dto.FinancialRecordResponseDto;
-import com.finance.dashboard.entity.enums.RecordType;
 import com.finance.dashboard.entity.model.FinancialRecord;
+import com.finance.dashboard.exception.InvalidOperationException;
+import com.finance.dashboard.exception.ResourceNotFoundExcption;
 import com.finance.dashboard.repository.FinancialRecordRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -12,7 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +38,11 @@ public class FinancialRecordService {
 
     }
 
-    public FinancialRecordResponseDto update(String id,FinancialRecordRequestDto financialRecordRequestDto){
-        FinancialRecord record=recordRepository.findById(id).orElseThrow(()-> new RuntimeException("Record not found"));
+    public FinancialRecordResponseDto update(String id,FinancialRecordRequestDto financialRecordRequestDto,String userId){
+        FinancialRecord record=recordRepository.findById(id).orElseThrow(()-> new ResourceNotFoundExcption("Record not found"));
+        if(!record.getUserId().equals(userId)){
+            throw new InvalidOperationException("You are not allowed to update this record");
+        }
         if(financialRecordRequestDto.getAmount()!=null){
             record.setAmount(financialRecordRequestDto.getAmount());
         }
@@ -58,8 +61,11 @@ public class FinancialRecordService {
         recordRepository.save(record);
         return modelMapper.map(record,FinancialRecordResponseDto.class);
     }
-    public void delete(String id){
-        FinancialRecord record= recordRepository.findById(id).orElseThrow(()-> new RuntimeException("Record not found"));
+    public void delete(String id,String userId){
+        FinancialRecord record= recordRepository.findById(id).orElseThrow(()-> new ResourceNotFoundExcption("Record not found"));
+        if(!record.getUserId().equals(userId)){
+            throw new InvalidOperationException("You are not allowed to delete this record !");
+        }
         record.setDeleted(true);
         recordRepository.save(record);
 

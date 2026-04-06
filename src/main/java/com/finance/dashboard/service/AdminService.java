@@ -6,6 +6,8 @@ import com.finance.dashboard.dto.UserResponseDto;
 import com.finance.dashboard.entity.enums.Role;
 import com.finance.dashboard.entity.enums.Status;
 import com.finance.dashboard.entity.model.User;
+import com.finance.dashboard.exception.InvalidOperationException;
+import com.finance.dashboard.exception.ResourceNotFoundExcption;
 import com.finance.dashboard.repository.UserRepository;
 import com.finance.dashboard.security.CustomUserDetails;
 import com.finance.dashboard.security.SecurityUtils;
@@ -26,7 +28,7 @@ public class AdminService {
 
     public UpdateResponseDto updateUser(String userId, UpdateRequestDto updateRequestDto){
         User user=userRepository.findById(userId).orElseThrow(
-                ()->new RuntimeException("User not Found with id: "+userId));
+                ()->new ResourceNotFoundExcption("User not Found with id: "+userId));
 
         if(updateRequestDto.getRole()!=null){
             user.setRole(updateRequestDto.getRole());
@@ -47,19 +49,19 @@ public class AdminService {
     }
     public void deleteUser(String userId){
         SecurityUtils.requireRole(Role.ADMIN);
-        User user=userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found with id: "+userId));
+        User user=userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundExcption("User not found with id: "+userId));
         Object principal=   SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String currentUserId;
         if(principal instanceof  CustomUserDetails customUserDetails){
             currentUserId=customUserDetails.getUser().getId();
         }else {
-            throw new IllegalStateException("Invalid authentication principal type: "+principal.getClass());
+            throw new InvalidOperationException("Invalid authentication principal type: "+principal.getClass());
         }
         if(user.getId().equals(currentUserId)){
-            throw new IllegalStateException("You cannot delete yourself");
+            throw new InvalidOperationException("You cannot delete yourself");
         }
         if(user.getStatus()==Status.DELETED){
-            throw new RuntimeException("User already deleted");
+            throw new InvalidOperationException("User already deleted");
         }
         user.setStatus(Status.DELETED);
 

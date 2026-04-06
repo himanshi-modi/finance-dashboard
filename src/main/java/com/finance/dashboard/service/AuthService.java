@@ -7,6 +7,8 @@ import com.finance.dashboard.dto.SignupResponseDto;
 import com.finance.dashboard.entity.enums.Role;
 import com.finance.dashboard.entity.enums.Status;
 import com.finance.dashboard.entity.model.User;
+import com.finance.dashboard.exception.InvalidOperationException;
+import com.finance.dashboard.exception.ResourceNotFoundExcption;
 import com.finance.dashboard.repository.UserRepository;
 import com.finance.dashboard.security.AuthUtil;
 import com.finance.dashboard.security.CustomUserDetails;
@@ -34,7 +36,7 @@ public class AuthService {
     public SignupResponseDto signup(SignupRequestDto signupRequestDto) {
         User user= userRepository.findByEmail(signupRequestDto.getEmail()).orElse(null);
         if(user!=null){
-            throw new RuntimeException("User already exists! ");
+            throw new InvalidOperationException("User already exists! ");
         }
         user =userRepository.save(User.builder()
                 .email(signupRequestDto.getEmail())
@@ -48,9 +50,6 @@ public class AuthService {
         );
         return modelMapper.map(user,SignupResponseDto.class);
 
-
-
-
     }
 
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
@@ -59,7 +58,7 @@ public class AuthService {
         String email=loginRequestDto.getEmail();
         User user=userRepository.findByEmail(email).orElseThrow(()->new BadCredentialsException("Invalid email or password"));
         if(user.getAccountLockedUntil()!=null && user.getAccountLockedUntil().isAfter(LocalDateTime.now())){
-            throw new RuntimeException("Account is Locked.Try later!");
+            throw new InvalidOperationException("Account is Locked.Try later!");
         }
 
         try{
@@ -69,7 +68,7 @@ public class AuthService {
             user.setAccountLockedUntil(null);
             CustomUserDetails userDetails= (CustomUserDetails) authentication.getPrincipal();
             if(user.getStatus()!=Status.ACTIVE){
-                throw new RuntimeException("User account is "+user.getStatus());
+                throw new InvalidOperationException("User account is "+user.getStatus());
             }
             String accessToken=authUtil.generateAccessToken(user);
             String refreshToken=authUtil.generateRefreshToken(user);
@@ -77,7 +76,7 @@ public class AuthService {
             userRepository.save(user);
             return new LoginResponseDto(user.getId(),accessToken,refreshToken);
 
-        }catch (Exception ex){
+        }catch ( BadCredentialsException ex){
             int attempts=user.getFailedLoginAttempts()==null ? 0:user.getFailedLoginAttempts();
             attempts++;
             user.setFailedLoginAttempts(attempts);
@@ -90,17 +89,15 @@ public class AuthService {
     public LoginResponseDto refreshToken(String refreshToken){
         String email=authUtil.getUsernameFromToken(refreshToken);
 
-        User user=userRepository.findByEmail(email).orElseThrow(()->new RuntimeException("User not found !"));
+        User user=userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundExcption("User not found !"));
         if(user.getStatus() != Status.ACTIVE){
-            throw new RuntimeException("User account is " + user.getStatus());
+            throw new InvalidOperationException("User account is " + user.getStatus());
         }
-        System.out.println("DB Token: "+user.getRefreshToken());
-        System.out.println("Incoming Token: "+refreshToken);
         if(user.getRefreshToken()==null || !user.getRefreshToken().equals(refreshToken)){
-            throw new RuntimeException("Invalid Refresh Token");
+            throw new InvalidOperationException("Invalid Refresh Token");
         }
         if(authUtil.isTokenExpired(refreshToken)){
-            throw new RuntimeException("Refresh token expired. Please login again");
+            throw new InvalidOperationException("Refresh token expired. Please login again");
         }
         String newAccessToken =authUtil.generateAccessToken(user);
         String newRefreshToken=authUtil.generateRefreshToken(user);
